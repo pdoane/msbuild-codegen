@@ -6,6 +6,8 @@ using System.Collections.Generic;
 
 public class CodeGen : ToolTask
 {
+    public bool Clean { get; set; }
+
     [Required]
     public ITaskItem[] Inputs { get; set; }
 
@@ -33,6 +35,7 @@ public class CodeGen : ToolTask
                 var additionalInputs = additionalInputsStr.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
 
                 var dependencies = new List<string>();
+                try
                 {
                     var lines = File.ReadAllLines(dependencyFile);
                     foreach (var line in lines)
@@ -58,39 +61,48 @@ public class CodeGen : ToolTask
                 allInputs.AddRange(dependencies);
                 allInputs.AddRange(additionalInputs);
 
-                if (OutOfDate(allInputs, outputs))
+                if (Clean)
                 {
-                    inputCommand = command;
-                    base.Execute();
-                }
-
-                string commandTLogPath = Path.Combine(TLogLocation, $"{TargetName}.command.1.tlog");
-                string readTLogPath = Path.Combine(TLogLocation, $"{TargetName}.read.1.tlog");
-                string writeTLogPath = Path.Combine(TLogLocation, $"{TargetName}.write.1.tlog");
-
-                using (StreamWriter writer = new StreamWriter(commandTLogPath, append: append))
-                {
-                    writer.WriteLine($"^{fullInputPath}");
-                    writer.WriteLine(command);
-                }
-
-                using (StreamWriter writer = new StreamWriter(readTLogPath, append: append))
-                {
-                    writer.WriteLine($"^{fullInputPath}");
-                    foreach (var dependency in dependencies)
-                        writer.WriteLine(Path.GetFullPath(dependency));
-                    foreach (var additionalInput in additionalInputs)
-                        writer.WriteLine(Path.GetFullPath(additionalInput));
-                }
-
-                using (StreamWriter writer = new StreamWriter(writeTLogPath, append: append))
-                {
-                    writer.WriteLine($"^{fullInputPath}");
+                    File.Delete(dependencyFile);
                     foreach (var output in outputs)
-                        writer.WriteLine(Path.GetFullPath(output));
+                        File.Delete(output);
                 }
+                else
+                {
+                    if (OutOfDate(allInputs, outputs))
+                    {
+                        inputCommand = command;
+                        base.Execute();
+                    }
 
-                append = true;
+                    string commandTLogPath = Path.Combine(TLogLocation, $"{TargetName}.command.1.tlog");
+                    string readTLogPath = Path.Combine(TLogLocation, $"{TargetName}.read.1.tlog");
+                    string writeTLogPath = Path.Combine(TLogLocation, $"{TargetName}.write.1.tlog");
+
+                    using (StreamWriter writer = new StreamWriter(commandTLogPath, append: append))
+                    {
+                        writer.WriteLine($"^{fullInputPath}");
+                        writer.WriteLine(command);
+                    }
+
+                    using (StreamWriter writer = new StreamWriter(readTLogPath, append: append))
+                    {
+                        writer.WriteLine($"^{fullInputPath}");
+                        foreach (var dependency in dependencies)
+                            writer.WriteLine(Path.GetFullPath(dependency));
+                        foreach (var additionalInput in additionalInputs)
+                            writer.WriteLine(Path.GetFullPath(additionalInput));
+                    }
+
+                    using (StreamWriter writer = new StreamWriter(writeTLogPath, append: append))
+                    {
+                        writer.WriteLine($"^{fullInputPath}");
+                        foreach (var output in outputs)
+                            writer.WriteLine(Path.GetFullPath(output));
+                    }
+
+                    append = true;
+                }
             }
         }
         catch (Exception ex)
