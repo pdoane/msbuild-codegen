@@ -28,11 +28,14 @@ Create an `ItemGroup` for your custom file type:
 </ItemGroup>
 ```
 
-Create a `Target` that invokes the task:
+Create targets that invoke the task:
 
 ```
   <Target Name="CodeGenMyFile" BeforeTargets="ClCompile">
-    <CodeGen Inputs="@(MyFile)" TargetName="CodeGenMyFile" TLogLocation="$(TLogLocation)" />
+    <CodeGen Inputs="@(MyFile)" TargetName="CodeGenMyFile" TLogLocation="$(TLogLocation)" Clean="false" />
+  </Target>
+  <Target Name="CleanMyFile" AfterTargets="Clean">
+    <CodeGen Inputs="@(MyFile)" TargetName="CodeGenMyFile" TLogLocation="$(TLogLocation)" Clean="true" />
   </Target>
 ```
 
