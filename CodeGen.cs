@@ -46,6 +46,12 @@ public class CodeGen : ToolTask
                             dependencies.Add(file);
                     }
                 }
+                catch (FileNotFoundException)
+                {
+                }
+                catch (DirectoryNotFoundException)
+                {
+                }
 
                 var allInputs = new List<string>();
                 allInputs.Add(inputPath);
